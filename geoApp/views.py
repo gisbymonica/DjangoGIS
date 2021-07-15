@@ -93,3 +93,17 @@ def buildings(request):
     context = {'my_map': m}
 
     return render(request, 'geoApp/home.html', context)
+
+def routes(request):
+
+    place = "Chennai, India"
+    graph = osmnx.graph.graph_from_place(place, network_type='drive')
+    dist_array = osmnx.distance.shortest_path(graph, 30037235, 30037241 )
+    #route = osmnx.plot.plot_graph_route(graph, dist_array, route_color='r')
+    m = folium.Map([13.1031, 80.1794],
+               zoom_start=10,
+               tiles="cartoDb dark_matter")
+    route = osmnx.folium.plot_route_folium(graph, dist_array, route_map=m, popup_attribute='name')
+    route=route._repr_html_()
+    context = {'my_map': route}
+    return render(request, 'geoApp/home.html', context)

@@ -1,0 +1,4 @@
+cache
+geo/__pycache__
+geoApp/__pycache__
+geoApp/migrations/__pycache__
