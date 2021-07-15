@@ -8,6 +8,7 @@ import folium
 from folium.plugins import MousePosition
 import matplotlib.pyplot as plt
 import seaborn as sb
+from shapely.geometry import LineString, Point
 
 # Create your views here.
 def home(request):
@@ -98,12 +99,26 @@ def routes(request):
 
     place = "Chennai, India"
     graph = osmnx.graph.graph_from_place(place, network_type='drive')
-    dist_array = osmnx.distance.shortest_path(graph, 30037235, 30037241 )
+    nodes, streets = osmnx.graph_to_gdfs(graph) 
+    origin = nodes.loc[nodes['x']==nodes['x'].min(), 'geometry'].values[0]
+    target = nodes.loc[nodes['x']==nodes['x'].max(), 'geometry'].values[0]
+    orig_xy = (origin.y, origin.x)
+    target_xy = (target.y, target.x)
+    origin_node = osmnx.get_nearest_node(graph, orig_xy, method='euclidean')
+    target_node = osmnx.get_nearest_node(graph, target_xy, method='euclidean')
+    dist_array = osmnx.distance.shortest_path(graph, origin_node, target_node, weight='length' )
     #route = osmnx.plot.plot_graph_route(graph, dist_array, route_color='r')
     m = folium.Map([13.1031, 80.1794],
                zoom_start=10,
                tiles="cartoDb dark_matter")
     route = osmnx.folium.plot_route_folium(graph, dist_array, route_map=m, popup_attribute='name')
+
+    """ route_nodes = nodes.loc[route]
+    route_line = LineString(list(route_nodes.geometry.values))
+    route_geom = gpd.GeoDataFrame([[route_line]], geometry='geometry', crs=streets.crs, columns=['geometry'])
+    route_geom.loc[0, 'osmids'] = str(list(route_nodes['osmid'].values))
+    route_geom['length_m'] = route_geom.length
+    print(route_geom['length_m']) """
     route=route._repr_html_()
     context = {'my_map': route}
     return render(request, 'geoApp/home.html', context)
